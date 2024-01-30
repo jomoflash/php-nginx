@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  app:
+    image: jomoflash/nginx-php
+    build:
+      context: ../
+      dockerfile: ./coupled/Dockerfile
+    ports:
+      - 127.0.0.1:8080:80
+    # volumes:
+    #   - PHP-PROJECT-DIR:/var/www/app:ro
+  
