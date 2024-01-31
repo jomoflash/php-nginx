@@ -1,19 +1,22 @@
-FROM php:8.2-fpm
+FROM php:8.1-fpm-alpine
 
 # PHP_CPPFLAGS are used by the docker-php-ext-* scripts
 ENV PHP_CPPFLAGS="$PHP_CPPFLAGS -std=c++11"
-ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update && \
-        apt install -y \
-        nginx \
-        libzip-dev libpng-dev libjpeg-dev zip \
-        libicu-dev libc-client-dev libkrb5-dev && \
+RUN apk update && apk add nginx zip tzdata \
+        libzip-dev libpng-dev \
+        icu-dev c-client krb5-dev imap-dev openssl-dev && \
         docker-php-ext-install zip gd pdo mysqli pdo_mysql opcache && \
         docker-php-ext-configure imap --with-kerberos --with-imap-ssl && docker-php-ext-install imap && \
-        docker-php-ext-configure intl && docker-php-ext-install intl && \
-        apt remove -y libicu-dev icu-devtools && \
-        apt autoremove -y
+        docker-php-ext-configure intl && docker-php-ext-install intl
+        # apk del --no-cache --no-network icu-dev krb5-dev imap-dev
+
+        # php-soap php-openssl php-gmp php-pdo_odbc php-json \
+        # php-dom php-pdo php-zip php-mysqli php-sqlite3 \
+        # php-pdo_pgsql php-bcmath php-gd php-odbc php-pdo_mysql \
+        # php-pdo_sqlite php-gettext php-xmlreader php-bz2 php-iconv \
+        # php-pdo_dblib php-curl php-ctype
+        # php-mcrypt php-xmlrpc php-apcu
 
 RUN { \
         echo 'opcache.memory_consumption=128'; \
@@ -23,6 +26,13 @@ RUN { \
         echo 'opcache.fast_shutdown=1'; \
         echo 'opcache.enable_cli=1'; \
         } > /usr/local/etc/php/conf.d/php-opocache-cfg.ini
+
+ENV TIMEZONE="Africa/Lagos"
+
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" && \
+    cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime && \
+    echo "${TIMEZONE}" > /etc/timezone && \
+    sed -i "s|;*date.timezone =.*|date.timezone = ${TIMEZONE}|i" ${PHP_INI_DIR}/php.ini
 
 COPY coupled/nginx/default.conf /etc/nginx/sites-enabled/default
 COPY coupled/nginx/nginx.conf /etc/nginx/nginx.conf

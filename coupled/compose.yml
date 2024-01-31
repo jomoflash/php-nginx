@@ -5,7 +5,7 @@ services:
     image: jomoflash/nginx-php
     build:
       context: ../
-      dockerfile: ./coupled/Dockerfile
+      dockerfile: ./coupled/Dockerfile.min
     ports:
       - 127.0.0.1:8080:80
     # volumes:
